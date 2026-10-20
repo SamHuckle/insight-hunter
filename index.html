@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Insight Hunter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<style>
+:root{
+  --bg:#ffffff; --surface:#f6f7f9; --line:#e4e6eb; --ink:#14161a; --ink-2:#4a4f5a; --ink-3:#7b8190;
+  --accent:#1f1f1f; --link:#1a4fd6; --focus:0 0 0 3px rgba(26,79,214,.18);
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,-apple-system,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit}
+.wrap{max-width:760px;margin:0 auto;padding:0 24px}
+
+.top{position:sticky;top:0;background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);z-index:5}
+.top .wrap{padding-top:18px;padding-bottom:14px}
+.brandbar{font-weight:600;font-size:15px;letter-spacing:-.01em;margin:0 0 12px;display:flex;align-items:center;gap:8px}
+.brandbar i{width:8px;height:8px;border-radius:50%;background:var(--accent);display:inline-block}
+
+.build{display:grid;grid-template-columns:minmax(150px,220px) 1fr auto;align-items:stretch;border:1px solid var(--line);border-radius:14px;background:#fff;min-height:56px;transition:box-shadow .15s,border-color .15s}
+.build:focus-within{border-color:#c5cad4;box-shadow:var(--focus)}
+.field{display:flex;flex-direction:column;justify-content:center;padding:8px 14px;min-width:0}
+.field + .field{border-left:1px solid var(--line)}
+.field label{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin-bottom:4px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-width:0}
+.chip{display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px 6px 4px 10px;font-size:13px;color:var(--ink);max-width:100%}
+.chip.brand{background:var(--ink);border-color:var(--ink);color:#fff}
+.chip button{border:0;background:none;padding:0 2px;cursor:pointer;color:inherit;opacity:.6;font-size:15px;line-height:1}
+.chip button:hover{opacity:1}
+.chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.field input{border:0;outline:0;background:transparent;font-size:15px;color:var(--ink);min-width:80px;flex:1;padding:2px 0;width:100%}
+.field input::placeholder{color:#a4a9b5}
+.go{border:0;background:var(--accent);color:#fff;border-radius:10px;margin:8px;padding:0 20px;font-weight:500;font-size:14px;cursor:pointer}
+.go:disabled{opacity:.4;cursor:default}
+.hint{font-size:12px;color:var(--ink-3);margin:8px 2px 0}
+
+.filters{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;align-items:center}
+.filters select,.filters input{height:34px;border:1px solid var(--line);border-radius:8px;padding:0 10px;font-size:13px;background:#fff;color:var(--ink-2);outline:0}
+.filters select{-webkit-appearance:none;appearance:none;padding-right:34px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%234a4f5a' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;background-size:12px 8px;min-width:150px;cursor:pointer}
+.filters input{width:180px}
+.filters select:focus,.filters input:focus{border-color:#c5cad4;box-shadow:var(--focus)}
+.filters .spacer{flex:1}
+.tabs{display:flex;gap:4px}
+.tabs button{border:0;background:none;padding:8px 12px;font-size:14px;color:var(--ink-3);cursor:pointer;border-radius:8px;position:relative}
+.tabs button.on{color:var(--ink);font-weight:500}
+.tabs button.on::after{content:"";position:absolute;left:12px;right:12px;bottom:-15px;height:2px;background:var(--ink);border-radius:2px}
+.tabs button:hover{background:var(--surface)}
+.meta-line{font-size:13px;color:var(--ink-3);margin:18px 0 6px}
+
+.list{padding:8px 0 80px}
+.item{padding:18px 0;border-bottom:1px solid var(--line)}
+.item:last-child{border-bottom:0}
+.src{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2)}
+.dot{width:18px;height:18px;border-radius:50%;background:var(--surface);border:1px solid var(--line);display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:var(--ink-2)}
+.title{display:block;font-size:18px;font-weight:500;line-height:1.35;color:var(--ink);text-decoration:none;margin:6px 0 6px;letter-spacing:-.005em}
+.title:hover{color:var(--link);text-decoration:underline;text-underline-offset:3px}
+.snip{font-size:14px;color:var(--ink-2);line-height:1.55;margin:0 0 8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.stats{font-size:13px;color:var(--ink-3)}
+.stats b{color:var(--ink-2);font-weight:500}
+.thread{margin-top:12px;padding:12px 14px;background:var(--surface);border-radius:10px;font-size:14px;color:var(--ink-2);line-height:1.5}
+.thread p{margin:0}
+.thread p+p{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.thread small{color:var(--ink-3);font-size:12px}
+.actions{display:flex;flex-wrap:wrap;gap:4px;margin-top:10px}
+.actions button{border:0;background:none;color:var(--ink-2);font-size:13px;padding:6px 10px;border-radius:999px;cursor:pointer}
+.actions button:hover{background:var(--surface);color:var(--ink)}
+.actions button.active{color:var(--link);font-weight:500}
+
+.empty{padding:56px 0;text-align:center;color:var(--ink-3)}
+.empty h2{font-size:20px;font-weight:600;color:var(--ink);margin:0 0 8px;letter-spacing:-.01em}
+.empty p{margin:0 0 20px;font-size:14px}
+.suggest{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.suggest button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 14px;font-size:13px;color:var(--ink-2);cursor:pointer}
+.suggest button:hover{border-color:#c5cad4;color:var(--ink)}
+.skel{height:86px;border-bottom:1px solid var(--line);background:linear-gradient(90deg,#f6f7f9 25%,#eceef2 50%,#f6f7f9 75%);background-size:200% 100%;animation:sh 1.2s infinite;margin:0;border-radius:6px}
+@keyframes sh{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.notice{margin-top:14px;font-size:14px;color:#912018;background:#fef3f2;border:1px solid #fecdca;padding:14px 16px;border-radius:10px;line-height:1.5}
+.notice b{font-weight:600}
+
+.scrim{position:fixed;inset:0;background:rgba(20,22,26,.35);display:none;align-items:center;justify-content:center;z-index:20;padding:20px}
+.scrim.show{display:flex}
+.modal{background:#fff;border-radius:16px;width:min(480px,100%);padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.modal h3{margin:0 0 4px;font-size:17px;font-weight:600}
+.modal p{margin:0 0 16px;font-size:13px;color:var(--ink-3)}
+.modal label{display:block;font-size:12px;color:var(--ink-2);margin-bottom:6px;font-weight:500}
+.modal input{width:100%;height:42px;border:1px solid var(--line);border-radius:10px;padding:0 12px;font-size:14px;outline:0}
+.modal input:focus{border-color:#c5cad4;box-shadow:var(--focus)}
+.modal .row{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+.btn{height:38px;border-radius:999px;border:1px solid var(--line);background:#fff;padding:0 16px;font-size:14px;cursor:pointer;color:var(--ink-2)}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+#export{position:fixed;left:-10000px;top:0}
+footer{border-top:1px solid var(--line);color:var(--ink-3);font-size:12px;padding:16px 0 28px;text-align:center}
+@media (max-width:640px){
+  .build{grid-template-columns:1fr}
+  .field + .field{border-left:0;border-top:1px solid var(--line)}
+  .go{margin:0 8px 8px;height:40px}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brandbar"><i></i>Insight Hunter</div>
+    <div class="build">
+      <div class="field">
+        <label for="brandIn">Brand</label>
+        <div class="chips" id="brandBox"></div>
+      </div>
+      <div class="field">
+        <label for="kwIn">Keywords</label>
+        <div class="chips" id="kwBox">
+          <input id="kwIn" placeholder="Add a keyword, press Enter" autocomplete="off">
+        </div>
+      </div>
+      <button class="go" id="go" disabled>Search</button>
+    </div>
+    <div class="hint">Press Enter or a comma to add. Click × to remove. Press Search when ready.</div>
+    <div class="filters">
+      <select id="sort" aria-label="Sort"><option value="relevance">Most relevant</option><option value="top">Top</option><option value="new">Newest</option><option value="comments">Most discussed</option></select>
+      <select id="time" aria-label="Time range"><option value="all">Any time</option><option value="year">Past year</option><option value="month">Past month</option><option value="week">Past week</option></select>
+      <input id="sub" placeholder="Limit to subreddit" aria-label="Subreddit">
+      <span class="spacer"></span>
+      <nav class="tabs">
+        <button id="tabResults" class="on">Results</button>
+        <button id="tabSaved">Saved <span id="savedN">0</span></button>
+      </nav>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="meta-line" id="meta"></div>
+  <div class="list" id="list"></div>
+</main>
+
+<footer>Results come from Reddit's public search. Saved items stay in this browser.</footer>
+
+<div class="scrim" id="scrim">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mt">
+    <h3 id="mt">Export image</h3>
+    <p>A clean 1200×630 PNG of this thread, ready for a deck.</p>
+    <label for="hl">Headline</label>
+    <input id="hl" placeholder="Your insight, e.g. People really really like the goo.">
+    <div class="row">
+      <button class="btn" id="cancel">Cancel</button>
+      <button class="btn primary" id="dl">Download PNG</button>
+    </div>
+  </div>
+</div>
+
+<div id="export"></div>
+
+<script>
+/* ---------- state ---------- */
+const $ = s => document.querySelector(s);
+const load = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
+const save = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+const S = {
+  brand: '',
+  keywords: [],
+  results: [],
+  saved: load('ih-saved', []),
+  hidden: new Set(load('ih-hidden', [])),
+  comments: {},
+  notes: load('ih-notes', {}),
+  view: 'results',
+  lastTerms: []
+};
+const persist = () => { save('ih-saved', S.saved); save('ih-hidden', [...S.hidden]); save('ih-notes', S.notes); };
+
+/* ---------- utils ---------- */
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ago = utc => {
+  const s = Date.now() / 1000 - utc;
+  const u = [['year',31536000],['month',2592000],['week',604800],['day',86400],['hour',3600],['minute',60]];
+  for (const [l, n] of u) if (s >= n) { const v = Math.floor(s / n); return `${v} ${l}${v > 1 ? 's' : ''} ago`; }
+  return 'just now';
+};
+const num = n => n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, '') + 'k' : String(n);
+const plural = (n, w) => `${num(n)} ${w}${n === 1 ? '' : 's'}`;
+
+/* ---------- query builder ---------- */
+const terms = () => [S.brand, ...S.keywords].filter(Boolean);
+
+function renderBuilder() {
+  $('#brandBox').innerHTML = S.brand
+    ? `<span class="chip brand"><span>${esc(S.brand)}</span><button data-rm="brand" aria-label="Remove brand">×</button></span>`
+    : `<input id="brandIn" placeholder="e.g. Cadbury" autocomplete="off">`;
+  $('#kwBox').innerHTML = S.keywords.map((k, i) =>
+    `<span class="chip"><span>${esc(k)}</span><button data-rm="kw" data-i="${i}" aria-label="Remove ${esc(k)}">×</button></span>`
+  ).join('') + `<input id="kwIn" placeholder="${S.keywords.length ? 'Add more' : 'Add a keyword, press Enter'}" autocomplete="off">`;
+  $('#go').disabled = terms().length === 0;
+  bindInputs();
+}
+
+function addTerm(kind, raw) {
+  const parts = raw.split(',').map(s => s.trim()).filter(Boolean);
+  if (!parts.length) return;
+  if (kind === 'brand') { S.brand = parts.shift(); }
+  parts.forEach(p => { if (!S.keywords.some(k => k.toLowerCase() === p.toLowerCase())) S.keywords.push(p); });
+  renderBuilder();
+  $('#kwIn').focus();
+}
+
+function bindInputs() {
+  const brandIn = $('#brandIn');
+  if (brandIn) brandIn.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); if (brandIn.value.trim()) addTerm('brand', brandIn.value); }
+  });
+  const kwIn = $('#kwIn');
+  kwIn.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); if (kwIn.value.trim()) addTerm('kw', kwIn.value); kwIn.value = ''; }
+    if (e.key === 'Backspace' && !kwIn.value && S.keywords.length) { S.keywords.pop(); renderBuilder(); $('#kwIn').focus(); }
+  });
+  kwIn.addEventListener('blur', () => { if (kwIn.value.trim()) addTerm('kw', kwIn.value); });
+}
+
+/* ---------- fetching: goes through the relay on Cloudflare ---------- */
+const RELAY = 'https://insight-hunter-relay.shuckle-graphics.workers.dev/?url=';
+async function fetchReddit(url) {
+  const r = await fetch(RELAY + encodeURIComponent(url));
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.error || ('HTTP ' + r.status));
+  return data;
+}
+
+/* ---------- search ---------- */
+async function search() {
+  const list = terms();
+  if (!list.length) return;
+  const sub = $('#sub').value.trim().replace(/^r\//, '');
+  const base = sub ? `https://www.reddit.com/r/${encodeURIComponent(sub)}/search.json` : 'https://www.reddit.com/search.json';
+  const sort = $('#sort').value, t = $('#time').value;
+  S.lastTerms = list;
+  S.view = 'results'; S.results = []; S.comments = {};
+  $('#go').disabled = true;
+  render({ loading: true });
+
+  const results = await Promise.allSettled(list.map(term =>
+    fetchReddit(`${base}?q=${encodeURIComponent(term)}&sort=${sort}&t=${t}&limit=25&raw_json=1&type=link`)
+      .then(j => ({ term, posts: j.data.children.map(c => c.data) }))
+  ));
+  const seen = new Map();
+  let failed = 0, firstErr = null;
+  results.forEach(r => {
+    if (r.status === 'rejected') { failed++; firstErr = firstErr || r.reason; return; }
+    r.value.posts.forEach(p => {
+      if (seen.has(p.id)) seen.get(p.id).matched.push(r.value.term);
+      else seen.set(p.id, { ...p, matched: [r.value.term] });
+    });
+  });
+  $('#go').disabled = terms().length === 0;
+  if (failed === results.length) {
+    render({ error: String(firstErr && (firstErr.message || firstErr)) });
+    return;
+  }
+  S.results = [...seen.values()].sort((a, b) => b.matched.length - a.matched.length || b.score - a.score);
+  render({ partial: failed });
+}
+
+async function loadThread(item) {
+  try {
+    const j = await fetchReddit(`https://www.reddit.com${item.permalink}.json?raw_json=1&limit=40&sort=top`);
+    const kids = j[1].data.children.filter(c => c.kind === 't1').map(c => c.data);
+    const lower = S.lastTerms.map(t => t.toLowerCase());
+    const hits = kids.filter(c => lower.some(t => (c.body || '').toLowerCase().includes(t)));
+    const pick = (hits.length ? hits : kids).slice(0, 3);
+    S.comments[item.id] = pick.length
+      ? pick.map(c => ({ body: c.body, score: c.score, author: c.author }))
+      : [{ body: 'No comments found in this thread.', score: 0, author: '' }];
+  } catch {
+    S.comments[item.id] = [{ body: 'Could not load the thread right now.', score: 0, author: '' }];
+  }
+  render();
+}
+
+/* ---------- render ---------- */
+const isSaved = id => S.saved.some(s => s.id === id);
+const find = id => S.results.find(p => p.id === id) || S.saved.find(p => p.id === id);
+
+function itemHTML(p, inSaved) {
+  const thread = S.comments[p.id];
+  const snip = p.selftext ? esc(p.selftext.slice(0, 260)) : '';
+  return `
+  <article class="item" data-id="${p.id}">
+    <div class="src">
+      <span class="dot">${esc((p.subreddit || '?')[0].toUpperCase())}</span>
+      <span>r/${esc(p.subreddit)}</span><span>·</span><span>${ago(p.created_utc)}</span>
+    </div>
+    <a class="title" href="https://www.reddit.com${esc(p.permalink)}" target="_blank" rel="noopener">${esc(p.title)}</a>
+    ${snip ? `<p class="snip">${snip}</p>` : ''}
+    <div class="stats"><b>${plural(p.score, 'vote')}</b> · ${plural(p.num_comments, 'comment')}${p.matched && !inSaved ? ` · matched <b>${esc(p.matched.join(', '))}</b>` : ''}</div>
+    ${thread ? `<div class="thread">${thread.map(c => `<p>${esc(c.body.slice(0, 320))}${c.author ? `<br><small>u/${esc(c.author)} · ${num(c.score)} points</small>` : ''}</p>`).join('')}</div>` : ''}
+    <div class="actions">
+      ${inSaved ? '' : `<button data-act="thread" class="${thread ? 'active' : ''}">${thread ? 'Refresh comments' : 'View comments'}</button>`}
+      <button data-act="${isSaved(p.id) ? 'unsave' : 'save'}" class="${isSaved(p.id) ? 'active' : ''}">${isSaved(p.id) ? 'Saved' : 'Save'}</button>
+      <button data-act="export">Export image</button>
+      ${inSaved ? '' : `<button data-act="hide">Not relevant</button>`}
+    </div>
+  </article>`;
+}
+
+function emptyHTML() {
+  const suggestions = [['Cadbury', 'Creme Egg'], ['Just Eat', 'takeaway'], ['Direct Line', 'insurance'], ['Google Health', 'fitness']];
+  return `
+  <div class="empty">
+    <h2>Find what people actually say</h2>
+    <p>Add a brand and a few keywords, then search all of Reddit.</p>
+    <div class="suggest">${suggestions.map(([b, k]) => `<button data-brand="${esc(b)}" data-kw="${esc(k)}">${esc(b)} · ${esc(k)}</button>`).join('')}</div>
+  </div>`;
+}
+
+function render(opts = {}) {
+  const list = $('#list');
+  const inSaved = S.view === 'saved';
+  $('#tabResults').classList.toggle('on', !inSaved);
+  $('#tabSaved').classList.toggle('on', inSaved);
+  $('#savedN').textContent = S.saved.length;
+
+  if (inSaved) {
+    $('#meta').textContent = S.saved.length ? plural(S.saved.length, 'saved item') : '';
+    list.innerHTML = S.saved.length
+      ? S.saved.map(p => itemHTML(p, true)).join('')
+      : `<div class="empty"><h2>Nothing saved yet</h2><p>Save threads from Results and they will appear here.</p></div>`;
+    return;
+  }
+  if (opts.loading) {
+    $('#meta').textContent = `Searching Reddit for ${S.lastTerms.join(', ')}…`;
+    list.innerHTML = '<div class="skel"></div><div class="skel"></div><div class="skel"></div>';
+    return;
+  }
+  if (opts.error) {
+    $('#meta').textContent = '';
+    list.innerHTML = `<div class="notice"><b>Couldn't get results.</b> ${esc(opts.error)}<br><br>
+      Try again in a moment. If it keeps failing, the connection may be blocked on this network. Check with IT.</div>`;
+    return;
+  }
+  if (!S.lastTerms.length) {
+    $('#meta').textContent = '';
+    list.innerHTML = emptyHTML();
+    return;
+  }
+  const shown = S.results.filter(p => !S.hidden.has(p.id));
+  const label = S.lastTerms.join(', ');
+  $('#meta').textContent = shown.length
+    ? `${plural(shown.length, 'thread')} for ${label}${opts.partial ? ` · ${opts.partial} term${opts.partial > 1 ? 's' : ''} didn't load` : ''}`
+    : `No threads for ${label}. Try a broader term or a different time range.`;
+  list.innerHTML = shown.map(p => itemHTML(p, false)).join('');
+}
+
+/* ---------- export ---------- */
+let exportItem = null;
+function openExport(p) {
+  exportItem = p;
+  $('#hl').value = S.notes[p.id] || '';
+  $('#hl').placeholder = p.title;
+  $('#scrim').classList.add('show');
+  setTimeout(() => $('#hl').focus(), 30);
+}
+function closeExport() { $('#scrim').classList.remove('show'); exportItem = null; }
+
+async function download() {
+  const p = exportItem;
+  if (!p) return;
+  const typed = $('#hl').value.trim();
+  const headline = typed || p.title;
+  S.notes[p.id] = typed;
+  persist();
+  const dl = $('#dl');
+  dl.disabled = true; dl.textContent = 'Rendering…';
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'width:1200px;height:630px;background:#4B2A7E;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:40px;font-family:Inter,sans-serif;';
+  const c = S.comments[p.id] && S.comments[p.id][0];
+  wrap.innerHTML = `
+    <div style="font-family:Poppins,sans-serif;font-weight:700;font-size:52px;color:#FFE14D;text-align:center;max-width:1000px;line-height:1.15;">${esc(headline)}</div>
+    <div style="width:640px;background:#fff;border-radius:18px;padding:22px 26px;color:#1C1C1C;box-sizing:border-box;">
+      <div style="display:flex;align-items:center;gap:10px;font-size:15px;color:#555;">
+        <span style="width:26px;height:26px;border-radius:50%;background:#FF4500;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;">${esc((p.subreddit||'?')[0].toUpperCase())}</span>
+        r/${esc(p.subreddit)} · ${ago(p.created_utc)}
+      </div>
+      <div style="font-weight:600;font-size:23px;line-height:1.3;margin-top:12px;">${esc(p.title)}</div>
+      ${c && c.author ? `<div style="margin-top:14px;border-left:4px solid #FFE14D;padding:8px 12px;background:#faf8ff;font-size:17px;line-height:1.4;border-radius:6px;">${esc(c.body.slice(0, 200))}</div>` : ''}
+      <div style="margin-top:14px;font-size:15px;color:#8A8A8A;">${plural(p.score, 'vote')} · ${plural(p.num_comments, 'comment')}</div>
+    </div>`;
+  $('#export').appendChild(wrap);
+  try {
+    const canvas = await html2canvas(wrap, { scale: 2, backgroundColor: null, useCORS: true });
+    canvas.toBlob(blob => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `reddit-${p.subreddit}-${p.id}.png`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    }, 'image/png');
+    closeExport();
+  } catch {
+    $('#meta').textContent = 'The image could not be rendered. Try again.';
+  } finally {
+    wrap.remove();
+    dl.disabled = false; dl.textContent = 'Download PNG';
+  }
+}
+
+/* ---------- events ---------- */
+$('#go').addEventListener('click', () => {
+  const kwIn = $('#kwIn');
+  if (kwIn && kwIn.value.trim()) addTerm('kw', kwIn.value);
+  search();
+});
+$('#brandBox').addEventListener('click', e => {
+  if (e.target.closest('[data-rm="brand"]')) { S.brand = ''; renderBuilder(); $('#brandIn').focus(); }
+});
+$('#kwBox').addEventListener('click', e => {
+  const b = e.target.closest('[data-rm="kw"]');
+  if (b) { S.keywords.splice(Number(b.dataset.i), 1); renderBuilder(); $('#kwIn').focus(); }
+});
+$('#list').addEventListener('click', e => {
+  const sug = e.target.closest('[data-brand]');
+  if (sug) {
+    S.brand = sug.dataset.brand;
+    S.keywords = [sug.dataset.kw];
+    renderBuilder(); search(); return;
+  }
+  const btn = e.target.closest('button[data-act]');
+  if (!btn) return;
+  const item = find(btn.closest('.item').dataset.id);
+  if (!item) return;
+  switch (btn.dataset.act) {
+    case 'thread': S.comments[item.id] = null; loadThread(item); break;
+    case 'save': if (!isSaved(item.id)) S.saved.push({ ...item, matched: undefined }); persist(); render(); break;
+    case 'unsave': S.saved = S.saved.filter(s => s.id !== item.id); persist(); render(); break;
+    case 'hide': S.hidden.add(item.id); persist(); render(); break;
+    case 'export': openExport(item); break;
+  }
+});
+$('#tabResults').addEventListener('click', () => { S.view = 'results'; render(); });
+$('#tabSaved').addEventListener('click', () => { S.view = 'saved'; render(); });
+$('#cancel').addEventListener('click', closeExport);
+$('#dl').addEventListener('click', download);
+$('#scrim').addEventListener('click', e => { if (e.target.id === 'scrim') closeExport(); });
+$('#hl').addEventListener('keydown', e => { if (e.key === 'Enter') download(); if (e.key === 'Escape') closeExport(); });
+
+renderBuilder();
+render();
+</script>
+</body>
+</html>
